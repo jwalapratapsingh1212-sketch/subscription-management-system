@@ -1,0 +1,269 @@
+{
+  "info": {
+    "_postman_id": "500fe110-e114-46b3-ae34-6e62e6d8e05d",
+    "name": "Subscription Management System API (v1)",
+    "description": "Complete Postman collection for the Enterprise Subscription Management System covering Authentication, RBAC, Customers, Products/Variants, Plans, Quotations, Subscriptions, Automated Billing, Invoices, Discounts, Payments, and Finance Dashboard Reports.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth & RBAC",
+      "item": [
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('token', jsonData.access_token);",
+                  "}",
+                  "pm.test('Status code is 200', function () { pm.response.toHaveStatus(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@subms.io\",\n  \"password\": \"Admin@12345\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Register New Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newclient@example.com\",\n  \"full_name\": \"Taylor Reed\",\n  \"password\": \"Client@12345\",\n  \"company_name\": \"Reed Ventures LLC\",\n  \"phone\": \"+1-555-0192\",\n  \"billing_address\": \"500 Market St\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"postal_code\": \"94105\",\n  \"country\": \"United States\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Get Current User (/me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Admin Create Staff Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"finance.ops@subms.io\",\n  \"full_name\": \"Finance Operations\",\n  \"password\": \"Staff@12345\",\n  \"role\": \"internal_staff\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/staff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/customers"
+          }
+        },
+        {
+          "name": "Get Customer Summary & Ledger",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/customers/1/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Products & Plans",
+      "item": [
+        {
+          "name": "List Products & Variants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "Create Product with Variant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Enterprise API Gateway\",\n  \"code\": \"PRD-API-GW\",\n  \"product_type\": \"saas\",\n  \"sales_price\": 199.00,\n  \"cost_price\": 35.00,\n  \"description\": \"Managed API gateway with rate limiting\",\n  \"variants\": [\n    {\n      \"name\": \"High Throughput Tier (10k RPS)\",\n      \"sku\": \"PRD-API-GW-10K\",\n      \"additional_price\": 150.00\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "List Subscription Plans",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/plans"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Quotations & Subscriptions",
+      "item": [
+        {
+          "name": "Create Quotation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 1,\n  \"plan_id\": 3,\n  \"valid_until\": \"2026-12-31\",\n  \"discount_code\": \"LAUNCH20\",\n  \"notes\": \"Enterprise expansion quote\",\n  \"lines\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 5,\n      \"tax_rule_id\": 1\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/quotations"
+          }
+        },
+        {
+          "name": "Confirm Quotation -> Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_date\": \"2025-05-01\",\n  \"payment_terms_days\": 14,\n  \"activate_immediately\": true\n}"
+            },
+            "url": "{{baseUrl}}/quotations/1/confirm"
+          }
+        },
+        {
+          "name": "Transition Subscription State",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"pause\",\n  \"notes\": \"Customer requested temporary pause\"\n}"
+            },
+            "url": "{{baseUrl}}/subscriptions/1/transition"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Automated Billing & Invoices",
+      "item": [
+        {
+          "name": "Run Automated Billing Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_date\": \"2025-05-01\",\n  \"auto_confirm_invoices\": true\n}"
+            },
+            "url": "{{baseUrl}}/invoices/billing/run"
+          }
+        },
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/invoices"
+          }
+        },
+        {
+          "name": "Download Invoice PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/invoices/1/pdf"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Payments & Finance Dashboard",
+      "item": [
+        {
+          "name": "Record Payment (Idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoice_id\": 2,\n  \"amount\": 500.00,\n  \"payment_method\": \"bank_transfer\",\n  \"idempotency_key\": \"pay-demo-idemp-001\",\n  \"notes\": \"Partial wire settlement\"\n}"
+            },
+            "url": "{{baseUrl}}/payments"
+          }
+        },
+        {
+          "name": "Get Invoice Balance Breakdown",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/payments/invoices/2/balance"
+          }
+        },
+        {
+          "name": "Get Finance Dashboard Metrics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/reports/dashboard"
+          }
+        }
+      ]
+    }
+  ]
+}
+
